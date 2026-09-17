@@ -11,7 +11,6 @@ from fastapi.testclient import TestClient
 from PIL import Image
 
 from server import app
-from services.ocr import OCRResult
 
 
 @pytest.fixture
@@ -56,7 +55,7 @@ class TestProcessImageEndpoint:
         sample_base64_image: str,
     ) -> None:
         """Test successful image processing."""
-        mock_recognize.return_value = OCRResult(text="テスト", confidence=0.95)
+        mock_recognize.return_value = "テスト"
         mock_translate.return_value = "Test"
         mock_tokenize.return_value = [
             MagicMock(surface="テスト", lemma="テスト", reading="テスト", pos="名詞")
@@ -71,11 +70,9 @@ class TestProcessImageEndpoint:
         assert "raw_text" in data
         assert "translated_text" in data
         assert "tokens" in data
-        assert "confidence" in data
         assert data["raw_text"] == "テスト"
         assert data["translated_text"] == "Test"
         assert len(data["tokens"]) == 1
-        assert data["confidence"] == 0.95
 
     def test_process_image_empty_image(self, client: TestClient) -> None:
         """Test process image with empty image field."""
@@ -113,7 +110,7 @@ class TestProcessImageEndpoint:
         sample_base64_image: str,
     ) -> None:
         """Test process image when OCR returns empty text."""
-        mock_recognize.return_value = OCRResult(text="", confidence=0.0)
+        mock_recognize.return_value = ""
 
         response = client.post(
             "/process-image", json={"image": sample_base64_image}
@@ -124,7 +121,6 @@ class TestProcessImageEndpoint:
         assert data["raw_text"] == ""
         assert data["translated_text"] == ""
         assert data["tokens"] == []
-        assert data["confidence"] == 0.0
 
     @patch("server.recognize_base64")
     @patch("server.translate")
@@ -138,7 +134,7 @@ class TestProcessImageEndpoint:
         sample_base64_image: str,
     ) -> None:
         """Test process image when translation fails."""
-        mock_recognize.return_value = OCRResult(text="テスト", confidence=0.85)
+        mock_recognize.return_value = "テスト"
         mock_translate.side_effect = Exception("Translation Error")
         mock_tokenize.return_value = []
 
@@ -149,4 +145,3 @@ class TestProcessImageEndpoint:
         assert response.status_code == 200
         data = response.json()
         assert "translation error" in data["translated_text"].lower()
-        assert data["confidence"] == 0.85

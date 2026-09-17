@@ -9,7 +9,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from PIL import Image
 
-from services.ocr import OCR, OCRError, OCRResult
+from services.ocr import OCR, OCRError
 
 
 class TestOCR:
@@ -27,10 +27,7 @@ class TestOCR:
         img_bytes.seek(0)
 
         result = self.ocr.recognize(img_bytes.read())
-        assert isinstance(result, OCRResult)
-        assert isinstance(result.text, str)
-        assert isinstance(result.confidence, float)
-        assert 0.0 <= result.confidence <= 1.0
+        assert isinstance(result, str)
 
     def test_recognize_empty_bytes_raises_error(self) -> None:
         """Test that empty bytes raises OCRError."""
@@ -51,9 +48,7 @@ class TestOCR:
 
         base64_string = base64.b64encode(img_bytes.read()).decode("utf-8")
         result = self.ocr.recognize_base64(base64_string)
-        assert isinstance(result, OCRResult)
-        assert isinstance(result.text, str)
-        assert isinstance(result.confidence, float)
+        assert isinstance(result, str)
 
     def test_recognize_base64_invalid_data_raises_error(self) -> None:
         """Test that invalid base64 data raises OCRError."""
@@ -94,25 +89,4 @@ class TestOCR:
         img_bytes.seek(0)
 
         result = ocr.recognize(img_bytes.read())
-        assert result.text == ""
-        assert result.confidence == 0.0
-
-    def test_confidence_score_normal_image(self) -> None:
-        """Test confidence score for a normal single-bubble image."""
-        img = Image.new("RGB", (100, 80), color="white")
-        img_bytes = io.BytesIO()
-        img.save(img_bytes, format="PNG")
-        img_bytes.seek(0)
-
-        result = self.ocr.recognize(img_bytes.read())
-        assert 0.0 <= result.confidence <= 1.0
-
-    def test_confidence_score_wide_image(self) -> None:
-        """Test confidence score for a very wide image (likely multi-region)."""
-        img = Image.new("RGB", (500, 50), color="white")
-        img_bytes = io.BytesIO()
-        img.save(img_bytes, format="PNG")
-        img_bytes.seek(0)
-
-        result = self.ocr.recognize(img_bytes.read())
-        assert result.confidence <= 1.0  # Should be penalized for aspect ratio
+        assert result == ""
