@@ -16,12 +16,11 @@ class TestTranslator:
         """Set up test fixtures."""
         self.translator = Translator()
 
-    @patch("services.translator.GoogleTranslator")
-    def test_translate_basic_text(self, mock_translator_class: MagicMock) -> None:
+    def test_translate_basic_text(self) -> None:
         """Test basic translation works with mocked API."""
         mock_translator = MagicMock()
         mock_translator.translate.return_value = "Hello"
-        mock_translator_class.return_value = mock_translator
+        self.translator._translator = mock_translator
 
         result = self.translator.translate("こんにちは")
         assert isinstance(result, str)
