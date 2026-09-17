@@ -1,11 +1,10 @@
-"""Translation service using deep-translator."""
+"""Translation service using deep-translator with fallback providers."""
 
 from __future__ import annotations
 
 import time
 
-from deep_translator import GoogleTranslator
-from deep_translator.exceptions import TooManyRequests
+from deep_translator import GoogleTranslator, MyMemoryTranslator
 
 
 class TranslationError(Exception):
@@ -13,44 +12,56 @@ class TranslationError(Exception):
 
 
 class Translator:
-    """Wrapper around deep-translator for Japanese-to-English translation."""
+    """Translation with Google (primary) and MyMemory (fallback) providers."""
 
     def __init__(self, source: str = "ja", target: str = "en") -> None:
         self._source = source
         self._target = target
-        self._translator = GoogleTranslator(source=source, target=target)
+        self._google = GoogleTranslator(source=source, target=target)
+        self._mymemory = MyMemoryTranslator(source="ja-JP", target="en-US")
+        self._last_request_time: float = 0.0
+        self._min_interval: float = 1.0
 
-    def translate(self, text: str, max_retries: int = 3) -> str:
-        """Translate text from source language to target language.
+    def _rate_limit(self) -> None:
+        """Enforce minimum interval between requests."""
+        elapsed = time.time() - self._last_request_time
+        if elapsed < self._min_interval:
+            time.sleep(self._min_interval - elapsed)
+        self._last_request_time = time.time()
+
+    def translate(self, text: str) -> str:
+        """Translate text with automatic fallback on rate limit.
+
+        Tries Google Translate first, falls back to MyMemory on 429.
 
         Args:
             text: Text to translate.
-            max_retries: Maximum number of retries on rate limit errors.
 
         Returns:
             Translated text.
 
         Raises:
-            TranslationError: If translation fails after all retries.
+            TranslationError: If all providers fail.
         """
         if not text or not text.strip():
             return ""
 
-        last_error: Exception | None = None
+        # Try Google first
+        try:
+            self._rate_limit()
+            result = self._google.translate(text)
+            if result:
+                return result
+        except Exception:
+            pass
 
-        for attempt in range(max_retries):
-            try:
-                result = self._translator.translate(text)
-                return result if result else ""
-            except TooManyRequests:
-                last_error = TooManyRequests("Rate limited by Google Translate")
-                if attempt < max_retries - 1:
-                    wait_time = 2 ** attempt
-                    time.sleep(wait_time)
-            except Exception as e:
-                raise TranslationError(f"Translation failed: {e}") from e
-
-        raise TranslationError(f"Translation failed after {max_retries} retries: {last_error}")
+        # Fallback to MyMemory
+        try:
+            self._rate_limit()
+            result = self._mymemory.translate(text)
+            return result if result else ""
+        except Exception as e:
+            raise TranslationError(f"Translation failed: {e}") from e
 
 
 _translator_instance: Translator | None = None

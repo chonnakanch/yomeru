@@ -10,7 +10,7 @@ from services.translator import TranslationError, Translator
 
 
 class TestTranslator:
-    """Tests for deep-translator wrapper."""
+    """Tests for translation service with fallback providers."""
 
     def setup_method(self) -> None:
         """Set up test fixtures."""
@@ -18,13 +18,10 @@ class TestTranslator:
 
     def test_translate_basic_text(self) -> None:
         """Test basic translation works with mocked API."""
-        mock_translator = MagicMock()
-        mock_translator.translate.return_value = "Hello"
-        self.translator._translator = mock_translator
+        self.translator._google = MagicMock()
+        self.translator._google.translate.return_value = "Hello"
 
         result = self.translator.translate("こんにちは")
-        assert isinstance(result, str)
-        assert len(result) > 0
         assert result == "Hello"
 
     def test_translate_empty_string(self) -> None:
@@ -37,37 +34,40 @@ class TestTranslator:
         result = self.translator.translate("   ")
         assert result == ""
 
-    @patch("services.translator.GoogleTranslator")
-    def test_translate_api_error(self, mock_translator_class: MagicMock) -> None:
-        """Test that API errors are wrapped in TranslationError."""
-        mock_translator = MagicMock()
-        mock_translator.translate.side_effect = Exception("API Error")
-        mock_translator_class.return_value = mock_translator
+    def test_translate_falls_back_to_mymemory(self) -> None:
+        """Test that MyMemory is used when Google fails."""
+        self.translator._google = MagicMock()
+        self.translator._google.translate.side_effect = Exception("Rate limited")
+        self.translator._mymemory = MagicMock()
+        self.translator._mymemory.translate.return_value = "Hello from MyMemory"
 
-        translator = Translator()
+        result = self.translator.translate("こんにちは")
+        assert result == "Hello from MyMemory"
+
+    def test_translate_all_providers_fail(self) -> None:
+        """Test error when all providers fail."""
+        self.translator._google = MagicMock()
+        self.translator._google.translate.side_effect = Exception("Google error")
+        self.translator._mymemory = MagicMock()
+        self.translator._mymemory.translate.side_effect = Exception("MyMemory error")
+
         with pytest.raises(TranslationError, match="Translation failed"):
-            translator.translate("テスト")
+            self.translator.translate("テスト")
 
-    @patch("services.translator.GoogleTranslator")
-    def test_translate_returns_result(self, mock_translator_class: MagicMock) -> None:
+    def test_translate_returns_result(self) -> None:
         """Test that translation returns the expected result."""
-        mock_translator = MagicMock()
-        mock_translator.translate.return_value = "Hello"
-        mock_translator_class.return_value = mock_translator
+        self.translator._google = MagicMock()
+        self.translator._google.translate.return_value = "Hello"
 
-        translator = Translator()
-        result = translator.translate("こんにちは")
+        result = self.translator.translate("こんにちは")
         assert result == "Hello"
 
-    @patch("services.translator.GoogleTranslator")
-    def test_translate_handles_none_result(
-        self, mock_translator_class: MagicMock
-    ) -> None:
+    def test_translate_handles_none_result(self) -> None:
         """Test that None result from API is handled gracefully."""
-        mock_translator = MagicMock()
-        mock_translator.translate.return_value = None
-        mock_translator_class.return_value = mock_translator
+        self.translator._google = MagicMock()
+        self.translator._google.translate.return_value = None
+        self.translator._mymemory = MagicMock()
+        self.translator._mymemory.translate.return_value = "Fallback"
 
-        translator = Translator()
-        result = translator.translate("テスト")
-        assert result == ""
+        result = self.translator.translate("テスト")
+        assert result == "Fallback"
