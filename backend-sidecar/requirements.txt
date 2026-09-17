@@ -1,6 +1,7 @@
 fastapi
 uvicorn[standard]
 manga-ocr>=0.1.16
+torchvision>=0.29.0
 sudachipy>=0.6.11
 sudachidict_core
 pillow>=10.0.0
