@@ -5,7 +5,7 @@ from __future__ import annotations
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
-from services.ocr import OCRError, recognize_base64
+from services.ocr import OCRError, OCRResult, recognize_base64
 from services.tokenizer import Token, tokenize
 from services.translator import TranslationError, translate
 
@@ -37,6 +37,9 @@ class ProcessImageResponse(BaseModel):
     raw_text: str
     translated_text: str
     tokens: list[TokenResponse]
+    confidence: float = Field(
+        ..., description="OCR confidence score (0.0 to 1.0). Low scores suggest multiple regions."
+    )
 
 
 class ErrorResponse(BaseModel):
@@ -67,40 +70,43 @@ async def process_image(request: ProcessImageRequest) -> ProcessImageResponse:
     - raw_text: Extracted Japanese text via OCR
     - translated_text: English translation
     - tokens: Morphological analysis of the raw text
+    - confidence: OCR confidence score (0.0-1.0)
     """
     if not request.image:
         raise HTTPException(status_code=400, detail="Image field is required")
 
     try:
-        raw_text = recognize_base64(request.image)
+        ocr_result: OCRResult = recognize_base64(request.image)
     except OCRError as e:
         raise HTTPException(status_code=400, detail=f"OCR failed: {e}") from e
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Unexpected OCR error: {e}") from e
 
-    if not raw_text:
+    if not ocr_result.text:
         return ProcessImageResponse(
             raw_text="",
             translated_text="",
             tokens=[],
+            confidence=ocr_result.confidence,
         )
 
     try:
-        translated_text = translate(raw_text)
+        translated_text = translate(ocr_result.text)
     except TranslationError as e:
         translated_text = f"[Translation error: {e}]"
     except Exception as e:
         translated_text = f"[Unexpected translation error: {e}]"
 
     try:
-        tokens = tokenize(raw_text)
+        tokens = tokenize(ocr_result.text)
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Tokenization failed: {e}"
         ) from e
 
     return ProcessImageResponse(
-        raw_text=raw_text,
+        raw_text=ocr_result.text,
         translated_text=translated_text,
         tokens=[TokenResponse(**t.__dict__) for t in tokens],
+        confidence=ocr_result.confidence,
     )
