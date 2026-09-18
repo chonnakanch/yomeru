@@ -48,30 +48,39 @@ Build a transparent, frameless, desktop-first overlay app in Tauri v2 that sits 
 ### 2. Deliverables & Directory Requirements
 * **Directory Structure:**
   * `src-tauri/tauri.conf.json`
+  * `src-tauri/Cargo.toml`
   * `src-tauri/src/lib.rs`
   * `frontend/src/App.tsx`
   * `frontend/src/components/SelectionCanvas.tsx`
 
 ### 3. Core Tasks
-* [ ] Initialize Tauri v2 project with React/TypeScript frontend.
-* [ ] Configure window flags in `tauri.conf.json` (`transparent: true`, `decorations: false`, `alwaysOnTop: true`, `skipTaskbar: true`).
-* [ ] Implement Rust command `set_click_through(ignore: bool)` via native cursor event handlers.
-* [ ] Register global hotkey shortcut listener (e.g., `Alt+T` / `Option+T`).
-* [ ] Create selection bounding-box component in React allowing users to drag and select a screen region.
-* [ ] Crop selected region and convert screen area into a base64 image string.
+* [x] Initialize Tauri v2 project with React/TypeScript frontend (Vite + React + TypeScript).
+* [x] Configure window flags in `tauri.conf.json` (`transparent: true`, `decorations: false`, `alwaysOnTop: true`, `skipTaskbar: true`, `macOSPrivateApi: true`).
+* [x] Implement Rust commands `set_click_through(ignore: bool)` and `toggle_click_through` via native cursor event handlers.
+* [x] Register global hotkey shortcut (`Option+T` / `Alt+T`) using `tauri-plugin-global-shortcut`.
+* [x] Create system tray icon with toggle menu and quit option.
+* [x] Create selection bounding-box component in React allowing users to drag and select a screen region.
+* [x] Crop selected region and convert screen area into a base64 image string.
+* [x] Auto-detect primary monitor size and position window to cover full screen at startup.
+* [x] Apply click-through mode on startup.
+* [x] Emit `click-through-changed` event to sync frontend state with Rust backend.
 
 ### 4. Required Tests
 * **Unit Tests:**
   * Test React canvas selection logic (bounding box coordinate calculations, width/height validations).
-  * Test base64 encoding utility functions.
+  * Test hotkey label detection (macOS vs other platforms).
 * **Integration Tests:**
-  * Test Rust window commands using Tauri test harnesses to verify state toggles.
-  * Test frontend event workflow from hotkey trigger to base64 image emission.
+  * Test status indicator rendering in click-through mode.
+  * Test that Tauri event listener is registered for state sync.
+  * Test base64 conversion utilities.
 
 ### 5. Phase Verification
-* Run `npm run tauri dev`.
+* Run `cargo tauri dev`.
 * Confirm window sits transparently on top of open applications.
-* Press hotkey, drag selection box, and verify cropped base64 image string generation.
+* Confirm status icon appears at bottom-right corner of full screen.
+* Press `Option+T` to toggle between click-through and selection modes.
+* Verify system tray icon appears with toggle menu.
+* Drag selection box and verify base64 image capture (console output).
 
 ---
 
