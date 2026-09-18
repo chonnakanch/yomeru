@@ -6,7 +6,7 @@ You are an AI developer agent tasked with building the application incrementally
 
 ## 1. Phased Execution Protocol
 
-1. **Sequential Implementation:** Work strictly one phase at a time following `plan.md` and the designated phase specification (e.g., `phase-1.md`). Do not write code, setup configurations, or prepare assets for future phases.
+1. **Sequential Implementation:** Work strictly one phase at a time following `docs/PHASES.md` and `PLAN.md`. Do not write code, setup configurations, or prepare assets for future phases.
 2. **Phase Boundary Enforcement:** A phase is considered complete ONLY when all code is implemented, unit tests pass, integration tests pass, and manual verification steps are satisfied.
 3. **Phase Sign-Off:** Before moving to the next phase, summarize the completed phase, report test results, and request confirmation from the user to proceed to the next phase.
 
@@ -57,3 +57,20 @@ Before executing any terminal command, building a package, or running code:
 * **Fail Fast:** Handle errors explicitly. Do not use blank `except:` blocks or swallow errors silently.
 * **Type Safety:** Use type annotations (Python type hints, TypeScript interfaces, Rust types) across all codebases.
 * **Clean Terminal Output:** Ensure test scripts and execution tasks output clear, readable error messages and assertion summaries.
+
+---
+
+## 5. Improvement Workflow
+
+When the user mentions adding an improvement or wants to note a feature/bugfix for later:
+
+1. **Read `improvement.md`** to check existing entries and avoid duplicates.
+2. **Add the improvement** with the following format:
+   * **Feature:** Brief title
+   * **Problem:** What issue or limitation exists
+   * **Proposed Solution:** How to fix or implement
+   * **Implementation Notes:** Technical details, dependencies, or constraints
+   * **Status:** `Not implemented yet`
+   * **Date:** Current date (YYYY-MM-DD)
+3. **Commit and push** the updated `improvement.md` to the repository.
+4. **Do not implement** the improvement immediately unless the user explicitly asks for it.
