@@ -9,6 +9,11 @@ You are an AI developer agent tasked with building the application incrementally
 1. **Sequential Implementation:** Work strictly one phase at a time following `docs/PHASES.md` and `PLAN.md`. Do not write code, setup configurations, or prepare assets for future phases.
 2. **Phase Boundary Enforcement:** A phase is considered complete ONLY when all code is implemented, unit tests pass, integration tests pass, and manual verification steps are satisfied.
 3. **Phase Sign-Off:** Before moving to the next phase, summarize the completed phase, report test results, and request confirmation from the user to proceed to the next phase.
+4. **Phase Documentation:** After completing a phase, update `docs/PHASES.md` to reflect actual implementation:
+   * Mark completed tasks with `[x]`
+   * Update deliverables list with any new files
+   * Update test requirements to match actual coverage
+   * Update verification steps to reflect current functionality
 
 ---
 
